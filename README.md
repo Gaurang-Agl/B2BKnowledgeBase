@@ -270,6 +270,27 @@ A missing or blank search term returns:
 
 ### 4. Admin Usage Summary
 
-```http
-GET /api/admin/usag
-```
+GET /api/admin/usage-summary/
+
+Authentication:
+Bearer JWT token
+
+Required role:
+Admin
+
+Example response:
+
+{
+    "total_queries": 10,
+    "unique_companies": 3,
+    "top_searches": [
+        {
+            "search_term": "Django",
+            "count": 4
+        },
+        {
+            "search_term": "PostgreSQL",
+            "count": 3
+        }
+    ]
+}
