@@ -1,0 +1,328 @@
+{
+  "info": {
+    "_postman_id": "b2bknowledgebase-teamboard-collection",
+    "name": "B2B KnowledgeBase API - TeamBoard",
+    "description": "Postman collection for the B2B Knowledge Base API assignment. Covers registration, authentication, Knowledge Base queries, admin usage statistics, and QueryLog verification.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "client_token",
+      "value": ""
+    },
+    {
+      "key": "admin_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Register a new company",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"postmanclient\",\n  \"password\": \"SecurePass123!\",\n  \"company_name\": \"Postman Test Company\",\n  \"email\": \"postman@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Register with duplicate username",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"postmanclient\",\n  \"password\": \"AnotherPassword123!\",\n  \"company_name\": \"Duplicate Test Company\",\n  \"email\": \"duplicate@example.com\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/register/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Login with valid credentials",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const json = pm.response.json();",
+              "    if (json.access) {",
+              "        pm.collectionVariables.set('client_token', json.access);",
+              "    }",
+              "}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"postmanclient\",\n  \"password\": \"SecurePass123!\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Login with wrong password",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"postmanclient\",\n  \"password\": \"WrongPassword123!\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/auth/login/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Query KB - no token",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"search\": \"Django\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/kb/query/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "kb",
+            "query"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 - Query KB - valid token, keyword with results",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{client_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"search\": \"Django\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/kb/query/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "kb",
+            "query"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "07 - Query KB - valid token, no matching results",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{client_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"search\": \"xyznonexistent999\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/kb/query/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "kb",
+            "query"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "08 - Query KB - missing search field",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{client_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/kb/query/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "kb",
+            "query"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "09 - Usage summary - CLIENT token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{client_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/usage-summary/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "usage-summary"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10 - Usage summary - ADMIN token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{admin_token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/admin/usage-summary/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "usage-summary"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11 - Verify QueryLog created - PGAdmin",
+      "description": "Manual database verification. After running scenarios 06 and 07, open PGAdmin and inspect the api_querylog table. Verify that records exist for search_term 'Django' with results_count 3 and 'xyznonexistent999' with results_count 0. Each record should contain a populated company_id and queried_at value."
+    }
+  ]
+}

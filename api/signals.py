@@ -5,6 +5,7 @@ import secrets
 
 from .models import Company
 
+
 @receiver(post_save, sender=User)
 def create_company(sender, instance, created, **kwargs):
     if created:

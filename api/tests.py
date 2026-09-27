@@ -78,7 +78,7 @@ class TeamBoardAPITests(APITestCase):
         response = self.client.post(
             self.query_url,
             {
-                'search_term': 'Django'
+                'search': 'Django'
             },
             format='json'
         )
@@ -100,7 +100,7 @@ class TeamBoardAPITests(APITestCase):
         response = self.client.post(
             self.query_url,
             {
-                'search_term': 'Django'
+                'search': 'Django'
             },
             format='json'
         )
@@ -111,7 +111,7 @@ class TeamBoardAPITests(APITestCase):
         )
 
         self.assertEqual(
-            response.data['results_count'],
+            response.data['count'],
             1
         )
 
@@ -166,11 +166,11 @@ class TeamBoardAPITests(APITestCase):
         )
 
         self.assertIn(
-            'unique_companies',
+            'active_companies',
             response.data
         )
 
         self.assertIn(
-            'top_searches',
+            'top_search_terms',
             response.data
         )

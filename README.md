@@ -1,296 +1,326 @@
 # TeamBoard — B2B Knowledge Base API
 
-TeamBoard is a Django REST Framework backend API for a B2B Knowledge Base platform.
+## Overview
 
-Companies can register and log in, receive a unique API key, search a curated knowledge base, and have their searches logged for usage tracking. Administrators can view overall API usage statistics.
+TeamBoard is a Django REST API platform for B2B companies to query a centralized Knowledge Base using secure JWT authentication.
 
-## Features
+The system supports:
 
-* Company registration and login
-* JWT-based authentication
-* Automatic company creation using a Django `post_save` signal
-* Unique API key generation
-* Client and Admin company roles
-* Protected Knowledge Base search API
-* Search across both questions and answers
-* Query logging for every valid Knowledge Base search
-* Admin-only usage summary
-* PostgreSQL database
-* Dockerized PostgreSQL environment
-* Environment-based database configuration
-* Django ORM transactions for query logging
-* REST API testing with Postman
+- Company registration
+- Automatic API key generation
+- JWT authentication
+- Knowledge Base search
+- Query logging
+- Admin usage statistics
+- PostgreSQL database
+- Docker-based PostgreSQL setup
+- Seed data for the Knowledge Base
 
-## Technology Stack
+## Tech Stack
 
-* Python 3.14
-* Django 6.1.1
-* Django REST Framework 3.18.1
-* Simple JWT 5.5.1
-* PostgreSQL 17
-* Docker & Docker Compose
-* Python Dotenv
-* Postman
+- Python 3.14
+- Django 6.1
+- Django REST Framework
+- Simple JWT
+- PostgreSQL 17
+- Docker / Docker Compose
+- Postman
 
 ## Project Structure
 
-```text
 B2BKnowledgeBase/
-│
 ├── api/
+│   ├── management/
+│   │   └── commands/
+│   │       └── seed_kb.py
 │   ├── migrations/
-│   ├── admin.py
-│   ├── apps.py
 │   ├── models.py
 │   ├── permissions.py
 │   ├── serializers.py
 │   ├── signals.py
 │   ├── tests.py
 │   └── views.py
-│
 ├── teamboard/
-│   ├── asgi.py
 │   ├── settings.py
 │   ├── urls.py
+│   ├── asgi.py
 │   └── wsgi.py
-│
-├── venv/
-├── .env
-├── .gitignore
 ├── docker-compose.yml
 ├── manage.py
 ├── requirements.txt
-└── README.md
-```
+└── B2BKnowledgeBase_Postman_Collection.json
 
-## Data Models
+## Prerequisites
 
-### Company
+- Python 3.14+
+- Docker Desktop
+- Git
+- Postman
 
-Stores company information associated with a Django user.
+## Setup
 
-Main fields:
+Clone the repository:
 
-* `user`
-* `company_name`
-* `api_key`
-* `role`
-* `created_at`
+git clone https://github.com/Gaurang-Agl/B2BKnowledgeBase.git
 
-Roles:
+cd B2BKnowledgeBase
 
-* `admin`
-* `client`
+Create and activate the virtual environment:
 
-New companies default to the `client` role.
+python -m venv venv
 
-### KBEntry
+PowerShell:
 
-Stores Knowledge Base content.
+.\venv\Scripts\Activate.ps1
 
-Fields:
+Install dependencies:
 
-* `question`
-* `answer`
-* `category`
-* `created_at`
+pip install -r requirements.txt
 
-Supported categories:
+## Environment Configuration
 
-* API
-* Database
-* Cloud
-* Framework
-* General
+Create a `.env` file in the project root.
 
-### QueryLog
+Example:
 
-Records every valid Knowledge Base search.
+DJANGO_SECRET_KEY='your-secret-key'
+POSTGRES_DB=teamboard
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD='your-password'
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
 
-Fields:
+Do not commit `.env` to Git.
 
-* `company`
-* `search_term`
-* `results_count`
-* `queried_at`
+## PostgreSQL with Docker
 
-## Authentication
+Start PostgreSQL:
 
-TeamBoard uses JSON Web Tokens (JWT) for API authentication.
+docker compose up -d
 
-Registration and login endpoints are public.
+Check the container:
 
-Knowledge Base and Admin Usage endpoints require a valid JWT access token.
+docker compose ps
 
-The JWT access token should be sent using:
+The PostgreSQL service runs on port 5432.
 
-```text
-Authorization: Bearer <access_token>
-```
+## Database Migration
+
+Run:
+
+python manage.py makemigrations
+python manage.py migrate
+
+## Seed Knowledge Base
+
+Populate the Knowledge Base:
+
+python manage.py seed_kb
+
+Verify the number of entries:
+
+python manage.py shell -c "from api.models import KBEntry; print('KB entries:', KBEntry.objects.count())"
+
+The project contains at least 10 Knowledge Base entries.
+
+## Run the API
+
+python manage.py runserver
+
+The API is available at:
+
+http://127.0.0.1:8000/
 
 ## API Endpoints
 
-### 1. Register Company
+| Method | Endpoint | Authentication | Description |
+|---|---|---|---|
+| POST | /api/auth/register/ | Public | Register a company |
+| POST | /api/auth/login/ | Public | Login and receive JWT |
+| POST | /api/kb/query/ | JWT | Search the Knowledge Base |
+| GET | /api/admin/usage-summary/ | Admin JWT | View usage statistics |
 
-```http
+## Authentication
+
+Protected endpoints require:
+
+Authorization: Bearer <access_token>
+
+The JWT access token is returned during registration and login.
+
+## Register
+
 POST /api/auth/register/
-```
 
-Creates a new Django user and company.
+Request:
 
-The company is automatically created through a Django `post_save` signal, which also generates a unique API key.
-
-#### Request
-
-```json
 {
-    "username": "examplecompany",
-    "email": "admin@example.com",
-    "password": "ExamplePassword123!",
-    "company_name": "Example Corporation"
+    "username": "acmecorp",
+    "password": "securepass123",
+    "company_name": "Acme Corp",
+    "email": "dev@acmecorp.com"
 }
-```
 
-#### Successful Response
+A successful registration returns:
 
-**HTTP 201 Created**
+- username
+- company_name
+- automatically generated api_key
+- JWT access token
 
-```json
-{
-    "message": "Registration successful.",
-    "username": "examplecompany",
-    "company_name": "Example Corporation",
-    "api_key": "<generated-api-key>",
-    "access": "<jwt-access-token>"
-}
-```
+The API key is generated server-side.
 
-The role is not accepted from the registration request and defaults to `client`.
+## Login
 
----
-
-### 2. Login
-
-```http
 POST /api/auth/login/
-```
 
-Authenticates an existing user and returns a fresh JWT access token.
+Request:
 
-#### Request
-
-```json
 {
-    "username": "examplecompany",
-    "password": "ExamplePassword123!"
+    "username": "acmecorp",
+    "password": "securepass123"
 }
-```
 
-#### Successful Response
+## Knowledge Base Query
 
-**HTTP 200 OK**
-
-```json
-{
-    "message": "Login successful.",
-    "username": "examplecompany",
-    "company_name": "Example Corporation",
-    "api_key": "<api-key>",
-    "access": "<jwt-access-token>"
-}
-```
-
-Invalid credentials return:
-
-**HTTP 401 Unauthorized**
-
----
-
-### 3. Knowledge Base Query
-
-```http
 POST /api/kb/query/
-```
 
-Requires authentication.
+Header:
 
-Searches the Knowledge Base using the supplied search term.
+Authorization: Bearer <access_token>
 
-The search is performed against both:
+Request:
 
-* `question`
-* `answer`
-
-#### Request
-
-```json
 {
-    "search_term": "Django"
+    "search": "Django"
 }
-```
 
-#### Successful Response
+Response:
 
-**HTTP 200 OK**
-
-```json
 {
-    "search_term": "Django",
-    "results_count": 2,
+    "search": "Django",
+    "count": 3,
     "results": [
         {
             "id": 1,
             "question": "What is Django?",
-            "answer": "Django is a Python web framework.",
+            "answer": "...",
             "category": "framework"
         }
     ]
 }
-```
 
-A search with no matching results still returns:
+The search checks both Knowledge Base questions and answers.
 
-**HTTP 200 OK**
+Every query is recorded in `QueryLog`.
 
-```json
+## No Matching Results
+
+Request:
+
 {
-    "search_term": "xyznonexistent",
-    "results_count": 0,
+    "search": "xyznonexistent999"
+}
+
+Response:
+
+{
+    "search": "xyznonexistent999",
+    "count": 0,
     "results": []
 }
-```
 
-Every valid search is recorded in `QueryLog`, including searches that return zero results.
+A query with no matches is still logged.
 
-A missing or blank search term returns:
-
-**HTTP 400 Bad Request**
-
----
-
-### 4. Admin Usage Summary
+## Admin Usage Summary
 
 GET /api/admin/usage-summary/
 
-Authentication:
-Bearer JWT token
+Requires a JWT belonging to a company whose role is `admin`.
 
-Required role:
-Admin
-
-Example response:
+Response:
 
 {
-    "total_queries": 10,
-    "unique_companies": 3,
-    "top_searches": [
+    "total_queries": 2,
+    "active_companies": 1,
+    "top_search_terms": [
         {
             "search_term": "Django",
-            "count": 4
-        },
-        {
-            "search_term": "PostgreSQL",
-            "count": 3
+            "count": 1
         }
     ]
 }
+
+`active_companies` represents companies that have generated QueryLog records.
+
+## Making a Company an Admin
+
+For local testing:
+
+python manage.py shell
+
+Then:
+
+from django.contrib.auth.models import User
+from api.models import Company
+
+user = User.objects.get(username="postmanclient")
+user.company.role = Company.Role.ADMIN
+user.company.save()
+
+Exit the shell with:
+
+exit()
+
+## Testing
+
+Run Django system checks:
+
+python manage.py check
+
+Run automated tests:
+
+python manage.py test
+
+The project includes tests covering authentication, Knowledge Base queries, permissions, and usage statistics.
+
+## Postman
+
+The repository contains:
+
+B2BKnowledgeBase_Postman_Collection.json
+
+The collection covers the required API scenarios:
+
+1. Register a new company
+2. Register with duplicate username
+3. Login with valid credentials
+4. Login with wrong password
+5. Query KB without token
+6. Query KB with valid token and matching results
+7. Query KB with valid token and no matching results
+8. Query KB with missing search field
+9. Usage summary with CLIENT token
+10. Usage summary with ADMIN token
+11. Verify QueryLog records in PostgreSQL/PGAdmin
+
+Import the collection into Postman and start the Django server before executing the API requests.
+
+## QueryLog Verification
+
+After executing Knowledge Base queries, QueryLog records can be verified using PGAdmin or Django shell.
+
+Example:
+
+python manage.py shell -c "from api.models import QueryLog; print(list(QueryLog.objects.values('search_term','results_count','company_id','queried_at')))"
+
+The query log contains:
+
+- company
+- search term
+- number of results
+- query timestamp
+
+## License
+
+This project was created as a backend API assignment/project.

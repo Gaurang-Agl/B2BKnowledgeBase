@@ -70,12 +70,12 @@ class LoginView(APIView):
 class KBQueryView(APIView):
 
     def post(self, request):
-        search_term = request.data.get('search_term')
+        search_term = request.data.get('search')
 
         if not search_term or not search_term.strip():
             return Response(
                 {
-                    "error": "search_term is required."
+                    "error": "search is required."
                 },
                 status=status.HTTP_400_BAD_REQUEST
             )
@@ -111,8 +111,8 @@ class KBQueryView(APIView):
 
         return Response(
             {
-                "search_term": search_term,
-                "results_count": results_count,
+                "search": search_term,
+                "count": results_count,
                 "results": data
             },
             status=status.HTTP_200_OK
@@ -143,8 +143,8 @@ class UsageSummaryView(APIView):
         return Response(
             {
                 "total_queries": total_queries,
-                "unique_companies": unique_companies,
-                "top_searches": list(top_searches)
+                "active_companies": unique_companies,
+                "top_search_terms": list(top_searches)
             },
             status=status.HTTP_200_OK
         )
